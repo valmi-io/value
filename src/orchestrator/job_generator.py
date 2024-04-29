@@ -182,8 +182,10 @@ class JobCreatorThread(threading.Thread):
 
         file_loader = FileSystemLoader(join(dirname(__file__), "templates"))
         env = Environment(loader=file_loader)
-        template = env.get_template("job_template.jinja")
-
+        template_name = "job_template.jinja"
+        if sync["source"]["credential"]["connector_type"] == "SRC_SHOPIFY":
+            template_name = "shopify_template.jinja"
+        template = env.get_template(template_name)
         output = template.render(sync=sync, app=v.get("APP"), prefix=SHARED_DIR)
         with open(join(dirs[GENERATED_DIR], f"{sync['id'].replace('-','_')}.py"), "w") as f:
             f.write(output)
