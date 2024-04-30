@@ -75,16 +75,15 @@ destination_op = docker_container_op.configured(
 )
 
 @op(
-    name="normalization_op_test_{{ sync['id'].replace('-','_') }}",
+    name="normalization_op_{{ sync['id'].replace('-','_') }}",
     retry_policy=RetryPolicy(
         max_retries=100,
         delay=2,  # 2s
         backoff=Backoff.EXPONENTIAL,
         jitter=Jitter.PLUS_MINUS,
     ),
-
-    )
-def normalization_op_test(context, a, b):
+)
+def normalization_op(context, a, b):
     execute_docker_container(
         context,
         image = "airbyte/normalization:latest",
@@ -103,13 +102,39 @@ def normalization_op_test(context, a, b):
         env_vars= list({**os.environ}.keys()),
     )
 
+@op(
+    name="transformation_po_op_{{ sync['id'].replace('-','_') }}",
+    retry_policy=RetryPolicy(
+        max_retries=100,
+        delay=2,  # 2s
+        backoff=Backoff.EXPONENTIAL,
+        jitter=Jitter.PLUS_MINUS,
+    ),
+)
+def transformation_po_op(context, c) -> None:
+    execute_docker_container(
+        context,
+        image = "valmiio/transform-po:latest",
+        command = [
+            "--config-file", 
+            "/tmp/config.json",
+            ],
+        container_kwargs = {  # keyword args to be passed to the container. example:
+            "volumes": ["{{ prefix }}/intermediate_store:{{ prefix }}/intermediate_store","{{ prefix }}/{{ app }}/repo/config/{{sync['id']}}-{{ sync['destination']['id'] }}.json:/tmp/config.json" ],
+        },
+        env_vars= list({**os.environ}.keys()),
+    )
+
+
+
+
 @op(name="finalizer_{{ sync['id'].replace('-','_') }}" , retry_policy=RetryPolicy(
         max_retries=100,
         delay=2,  # 2s
         backoff=Backoff.EXPONENTIAL,
         jitter=Jitter.PLUS_MINUS,
     ))
-def finalizer(context,c) -> None:
+def finalizer(context,d) -> None:
     context.log.info("finalizer")
     finalise_this_run()
 
@@ -135,8 +160,9 @@ def job():
                     jitter=Jitter.PLUS_MINUS,
                 )
             )(i)
-        c = normalization_op_test(a,b)
-        finalizer(c) 
+        c = normalization_op(a,b)
+        d = transformation_po_op(c)
+        finalizer(d) 
 
     return sync_graph.to_job(name="{{ sync['id'].replace('-','_') }}")
 
