@@ -26,7 +26,9 @@ from datetime import datetime
 from pydantic import UUID4
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
-
+from sqlalchemy import func, text,cast
+from sqlalchemy import  Text
+from sqlalchemy.dialects.postgresql import JSONB
 from metastore.models import SyncRun
 from api.schemas import SyncRunCreate
 from typing import Any, Dict, List, Optional
@@ -145,12 +147,17 @@ class SyncRunsService(BaseService[SyncRun, SyncRunCreate, Any]):
             # Query for the latest stopped sync run
             result = (
                 self.db_session.query(self.model)
-                .filter(SyncRun.sync_id == sync_id, SyncRun.status == "stopped")
+                .filter(
+                    SyncRun.sync_id == sync_id,
+                    func.json_extract_path_text(SyncRun.extra, 'src', 'status', 'status') == 'success',
+                    func.json_extract_path_text(SyncRun.extra, 'dest', 'status', 'status') == 'success',
+                    func.json_extract_path_text(SyncRun.extra, 'run_manager', 'status', 'status') == 'success',
+                )
                 .order_by(SyncRun.created_at.desc())
                 .limit(1)
                 .first()
             )
-
+            logger.debug("query executed")
             if result is None:
                 return LastSuccessfulSync(found=False)
             return LastSuccessfulSync(found=True,run_end_at = result.run_end_at)
@@ -167,6 +174,18 @@ class SyncRunsService(BaseService[SyncRun, SyncRunCreate, Any]):
             )
             if result is None:
                 return LatestSyncInfo(found=False)
-            return LatestSyncInfo(found=True,status=result.status,created_at=result.created_at) 
+            src_status = result.extra.get("src", {}).get("status", {}).get("status")
+            dest_status = result.extra.get("dest", {}).get("status", {}).get("status")
+            run_manager_status = result.extra.get("run_manager", {}).get("status", {}).get("status")
+
+            if src_status is None or dest_status is None or run_manager_status is None:
+                status = "running"
+            elif src_status == "success" and dest_status == "success" and run_manager_status == "success":
+                status = "success"
+            else:
+                status = "failed"
+            return LatestSyncInfo(found=True,status=status,created_at=result.created_at) 
         except Exception as e:
-            logger.error(e)
+            logger.debug("in exception")
+            logger.debug(e)
+            logger.exception(e)
