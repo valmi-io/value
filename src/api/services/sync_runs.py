@@ -172,8 +172,11 @@ class SyncRunsService(BaseService[SyncRun, SyncRunCreate, Any]):
                 .limit(1)
                 .first()
             )
+            logger.debug(result)
             if result is None:
                 return LatestSyncInfo(found=False)
+            if result.extra is None:
+                return LatestSyncInfo(found=True, status="running", created_at=result.created_at)
             src_status = result.extra.get("src", {}).get("status", {}).get("status")
             dest_status = result.extra.get("dest", {}).get("status", {}).get("status")
             run_manager_status = result.extra.get("run_manager", {}).get("status", {}).get("status")
