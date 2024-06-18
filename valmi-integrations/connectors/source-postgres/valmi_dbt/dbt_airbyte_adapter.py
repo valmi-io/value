@@ -183,6 +183,7 @@ class DbtAirbyteAdpater:
             "columns": f"[{col_arr_str}]",
             "id_key": catalog.streams[0].id_key,
             "name": self.get_table_name(catalog.streams[0].stream.name),
+            "query": config["query"],
             "previous_run_status": previous_run_status,
             "destination_sync_mode": catalog.streams[0].destination_sync_mode.value,
         }

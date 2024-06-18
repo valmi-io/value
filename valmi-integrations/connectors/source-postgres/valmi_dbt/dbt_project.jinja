@@ -28,6 +28,7 @@ models:
 
 vars:
   source_table: "{{args['name']}}"
+  query: {{ args['query']}}
   init: "init_{{args['sync_id']}}"
   finalized_snapshot:  "finalized_snapshot_{{args['sync_id']}}"
   stg_snapshot: "stg_snapshot_{{args['sync_id']}}"
