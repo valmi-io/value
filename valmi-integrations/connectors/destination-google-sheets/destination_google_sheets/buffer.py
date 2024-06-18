@@ -17,11 +17,12 @@ class WriteBufferMixin:
     flush_interval = 500  # records count
     flush_interval_size_in_kb = 10 ^ 8  # memory allocation ~ 97656 Kb or 95 Mb
 
-    def __init__(self):
+    def __init__(self, stream_name: str):
         # Buffer for input records
         self.records_buffer = {}
         # Placeholder for streams metadata
         self.stream_info = {}
+        self.stream_name = stream_name
 
     @property
     def default_missing(self) -> str:
@@ -39,7 +40,7 @@ class WriteBufferMixin:
         Populates `stream_info` placeholder with stream metadata information.
         """
         stream = configured_stream.stream
-        self.records_buffer[stream.name] = []
+        self.records_buffer[self.stream_name] = []
 
         # TODO: can be done much better
 
@@ -79,13 +80,13 @@ class WriteBufferMixin:
         sorted_headers = sorted(headers)
         sorted_stream_props_used = sorted(stream_props_used, key=lambda x: x[1])
 
-        self.stream_info[stream.name] = {
+        self.stream_info[self.stream_name] = {
             "headers": sorted_headers,
             "stream_properties": list(map(lambda x: x[0], sorted_stream_props_used)),
             "is_set": False,
         }
 
-    def add_to_buffer(self, stream_name: str, record: Mapping):
+    def add_to_buffer(self,stream_name:str, record: Mapping):
         """
         Populates input records to `records_buffer`.
 
@@ -93,16 +94,15 @@ class WriteBufferMixin:
         2) coerces normalized record to str
         3) gets values as list of record values from record mapping.
         """
-
-        norm_record = self._normalize_record(stream_name, record)
+        norm_record = self._normalize_record(self.stream_name, record)
         norm_values = list(map(str, norm_record.values()))
-        self.records_buffer[stream_name].append(norm_values)
+        self.records_buffer[self.stream_name].append(norm_values)
 
-    def clear_buffer(self, stream_name: str):
+    def clear_buffer(self):
         """
         Cleans up the `records_buffer` values, belonging to input stream.
         """
-        self.records_buffer[stream_name].clear()
+        self.records_buffer[self.stream_name].clear()
 
     def _normalize_record(self, stream_name: str, record: Mapping) -> Mapping[str, Any]:
         """
@@ -147,8 +147,8 @@ class WriteBufferMixin:
         """
         data = {}
 
-        stream_properties = self.stream_info[stream_name]["stream_properties"]
-        headers = self.stream_info[stream_name]["headers"]
+        stream_properties = self.stream_info[self.stream_name]["stream_properties"]
+        headers = self.stream_info[self.stream_name]["headers"]
 
         for idx, prop in enumerate(stream_properties):
             data[headers[idx]] = record[prop]

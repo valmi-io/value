@@ -29,23 +29,15 @@ from typing import Any, Dict, Iterable, Mapping
 
 from airbyte_cdk import AirbyteLogger
 from airbyte_cdk.destinations import Destination
-from airbyte_cdk.models import (
-    AirbyteConnectionStatus,
-    AirbyteMessage,
-)
+from airbyte_cdk.models import AirbyteConnectionStatus, AirbyteMessage
 from airbyte_cdk.models.airbyte_protocol import Status
-from valmi_connector_lib.valmi_protocol import (
-    ValmiDestinationCatalog,
-    ValmiSink,
-    ConfiguredValmiCatalog,
-    ConfiguredValmiDestinationCatalog,
-    DestinationSyncMode,
-    FieldCatalog
-)
-from valmi_connector_lib.valmi_destination import ValmiDestination
-from valmi_connector_lib.destination_wrapper.destination_write_wrapper import DestinationWriteWrapper, HandlerResponseData
-
 from google.auth.exceptions import RefreshError
+from valmi_connector_lib.destination_wrapper.destination_write_wrapper import (
+    DestinationWriteWrapper, HandlerResponseData)
+from valmi_connector_lib.valmi_destination import ValmiDestination
+from valmi_connector_lib.valmi_protocol import (
+    ConfiguredValmiCatalog, ConfiguredValmiDestinationCatalog,
+    DestinationSyncMode, FieldCatalog, ValmiDestinationCatalog, ValmiSink)
 
 from .client import GoogleSheetsClient
 from .helpers import ConnectionTest, get_spreadsheet_id
@@ -54,12 +46,18 @@ from .writer import GoogleSheetsWriter
 
 
 class SheetsWriter(DestinationWriteWrapper):
+    def modify_stream_name(self, stream_name: str) -> str:
+        splits = stream_name.split(".")
+        if len(splits) == 3:
+            return splits[2]
+        return stream_name
     def initialise_message_handling(self):
         spreadsheet_id = get_spreadsheet_id(self.config["spreadsheet_id"])
 
         client = GoogleSheetsClient(self.config).authorize()
         spreadsheet = GoogleSheets(client, spreadsheet_id)
-        self.writer = GoogleSheetsWriter(spreadsheet)
+        stream_name = self.modify_stream_name(self.configured_catalog.streams[0].stream.name)
+        self.writer = GoogleSheetsWriter(spreadsheet, stream_name)
 
         self.writer.init_buffer_sink(
             configured_stream=self.configured_catalog.streams[0], sink=self.configured_destination_catalog.sinks[0]
