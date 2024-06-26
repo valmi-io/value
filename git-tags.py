@@ -4,7 +4,7 @@ connectors = {
     "destination-stripe": "0.1.9",
     "destination-slack": "0.1.9",
     "destination-hubspot": "0.1.9",
-    "destination-google-sheets": "0.1.9",
+    "destination-google-sheets": "0.1.10",
     "destination-google-ads": "0.1.9",
     "destination-gong": "0.1.9",
     "destination-facebook-ads": "0.1.9",
@@ -13,14 +13,14 @@ connectors = {
 
     "source-redshift": "0.1.13",
     "source-snowflake": "0.1.13",
-    "source-postgres": "0.1.13"
+    "source-postgres": "0.1.15"
 }
 
-valmi_core = "0.1.22"
+valmi_core = "0.1.26"
 
-valmi_app_backend = "0.1.30"
+valmi_app_backend = "0.1.38"
 
-valmi_app = "0.1.30"
+valmi_app = "0.1.41"
 
 valmi_dagster = "0.1.5"
 
