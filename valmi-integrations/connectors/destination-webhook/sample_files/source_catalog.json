@@ -1,1 +1,0 @@
-{"streams":[{"id_key":"id","stream":{"name":"\"valmi_app\".\"public\".\"test_user\"","json_schema":{"$schema":"http://json-schema.org/draft-07/schema#","properties":{"id":{"type":"NOT_FILLED"},"email":{"type":"NOT_FILLED"},"username":{"type":"NOT_FILLED"}}},"supported_sync_modes":["full_refresh","incremental"]},"sync_mode":"full_refresh","destination_sync_mode":"append"}]}

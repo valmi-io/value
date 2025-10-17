@@ -1,9 +1,0 @@
-*
-!docker-entrypoint.sh
-!Dockerfile
-!main.py
-!source_redshift
-!setup.py
-!libs
-!profiles_template.jinja
-!valmi_dbt

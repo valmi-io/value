@@ -1,1 +1,0 @@
-{"type": "RECORD", "record": {"stream": "\"valmi_app\".\"public\".\"test_user\"", "data": {"_valmi_meta": {"_valmi_row_num": 1, "_valmi_sync_op": "upsert"}, "email": "raj+testtesttest@valmi.io", "coupon": "8KVV0cSg", "is_staff": false, "username": "rajvarkala112122223333"}, "emitted_at": 1685001575000}}

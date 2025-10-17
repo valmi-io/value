@@ -1,2 +1,0 @@
-duckdb==0.7.1
-    # via valmi-activation (setup.py)

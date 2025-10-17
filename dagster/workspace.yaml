@@ -1,6 +1,0 @@
-load_from:
-  # Each entry here corresponds to a service in the docker-compose file that exposes user code.
-  - grpc_server:
-      host: valmi-repo
-      port: 4001
-      location_name: "valmi-repo"
