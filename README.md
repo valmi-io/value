@@ -17,7 +17,7 @@ Outcome-based billing and payments infrastructure for AI agents. Meter usage, co
 Value Platform handles metering, pricing, billing, and revenue tracking for AI agents:
 
 - **AI-Native Metering** — Track tokens, LLM calls, API usage, and outcomes with minimal code
-- **Flexible Pricing** — Usage-based, tiered, per-action, per-outcome, or any combination
+- **Flexible Pricing** — Fixed-Fee, Usage-based, tiered, per-action, per-outcome, or any combination
 - **Cost Attribution** — Automatically allocate costs across LLM providers, APIs, and compute
 - **Revenue Insights** — Real-time profitability tracking per agent and per customer
 
