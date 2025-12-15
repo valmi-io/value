@@ -10,7 +10,7 @@
      <a href="https://github.com/valmi-io/value"><img src="https://img.shields.io/github/stars/valmi-io/value?style=for-the-badge" alt="GitHub stars"></a>
    <a href="https://hub.docker.com/repositories/valmiinfra"><img src="https://img.shields.io/badge/🐳_Docker-0ea5e9?style=for-the-badge" alt="Docker Hub"></a>
   
-  
+  ⭐ *Consider giving us a star! Your support helps us continue adding new, exciting features.*
 </p>
 
 # Value Platform
