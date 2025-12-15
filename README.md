@@ -15,7 +15,7 @@
 
 # Value Platform
 
-Outcome-based billing and payments infrastructure for AI agents. Meter usage, configure flexible pricing, and track profitability — so you can focus on building great AI products.
+Outcome-based billing and payments infrastructure for AI agents. Meter usage, configure flexible pricing, and track profitability, so you can focus on building great AI products.
 
 ## Overview
 
