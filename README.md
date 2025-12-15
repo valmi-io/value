@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://www.valmi.io/docs/introduction"><img src="https://img.shields.io/badge/📚_Docs-6366f1?style=for-the-badge" alt="Docs"></a>
   <a href="https://www.valmi.io/blog/"><img src="https://img.shields.io/badge/📝_Blog-ec4899?style=for-the-badge" alt="Blog"></a>
-  <a href="https://www.valmi.io"><img src="https://img.shields.io/badge/📝_Website-valmi-ec4900?style=for-the-badge" alt="Website"></a>
+  <a href="https://www.valmi.io"><img src="https://img.shields.io/badge/📝_Website-ec4900?style=for-the-badge" alt="Website"></a>
 
   <a href="https://hub.docker.com/repositories/valmiinfra"><img src="https://img.shields.io/badge/🐳_Docker-0ea5e9?style=for-the-badge" alt="Docker Hub"></a>
   
