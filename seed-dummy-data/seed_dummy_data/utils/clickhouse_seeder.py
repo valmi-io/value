@@ -196,7 +196,7 @@ class ClickHouseSeeder:
         if not agents_data:
             logger.warning("No agents data provided, using defaults")
             agents_data = self._create_default_agents()
-        end_date = datetime.now(timezone.utc)
+        end_date = datetime.now(timezone.utc) - timedelta(days=1)
         start_date = end_date - timedelta(days=months * 30)
         total_traces = 0
         total_days = 0
