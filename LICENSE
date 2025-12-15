@@ -1,0 +1,52 @@
+# Licenses
+
+This repository contains multiple components with different licenses.
+
+## License Summary
+
+| Component                      | License                    |
+| ------------------------------ | -------------------------- |
+| `sdks/`                        | MIT License                |
+| `examples/`                    | MIT License                |
+| `seed-dummy-data/`             | MIT License                |
+| `value-control-plane-backend/` | Elastic License 2.0 (ELv2) |
+| `value-engine/`                | Elastic License 2.0 (ELv2) |
+| `value-ui/`                    | Elastic License 2.0 (ELv2) |
+
+## MIT License
+
+The following directories are licensed under the MIT License:
+
+- `sdks/` (including Python SDK)
+- `examples/`
+- `seed-dummy-data/`
+
+See the LICENSE file in each directory for the full license text.
+
+### MIT License Summary:
+
+- Free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+- Must include copyright notice and permission notice
+- Provided "as is" without warranty
+
+## Elastic License 2.0 (ELv2)
+
+The following directories are licensed under the Elastic License 2.0:
+
+- `value-control-plane-backend/`
+- `value-engine/`
+- `value-ui/`
+
+See the LICENSE file in each directory for the full license text.
+
+### Key Points of ELv2:
+
+- Free to use, modify, and distribute
+- Cannot be provided as a hosted/managed service
+- Cannot remove or circumvent license key functionality
+
+---
+
+For the complete license terms, please refer to the LICENSE file in each component's directory.
+
+Copyright (c) 2024 Valmi.io

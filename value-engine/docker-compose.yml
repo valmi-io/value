@@ -1,0 +1,325 @@
+services:
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    environment:
+      KAFKA_BROKER_ID: ${KAFKA_BROKER_ID:-1}
+      KAFKA_ZOOKEEPER_CONNECT: ${KAFKA_ZOOKEEPER_CONNECT:-zookeeper:2181}
+      KAFKA_ADVERTISED_LISTENERS: ${KAFKA_ADVERTISED_LISTENERS:-PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: ${KAFKA_LISTENER_SECURITY_PROTOCOL_MAP:-PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT}
+      KAFKA_INTER_BROKER_LISTENER_NAME: ${KAFKA_INTER_BROKER_LISTENER_NAME:-PLAINTEXT}
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: ${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR:-1}
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: ${KAFKA_AUTO_CREATE_TOPICS_ENABLE:-true}
+    ports:
+      - "${KAFKA_PORT:-29092}:29092"
+    depends_on:
+      - zookeeper
+    restart: unless-stopped
+    networks:
+      - value-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: ${ZOOKEEPER_CLIENT_PORT:-2181}
+      ZOOKEEPER_TICK_TIME: ${ZOOKEEPER_TICK_TIME:-2000}
+    ports:
+      - "${ZOOKEEPER_CLIENT_PORT:-2181}:${ZOOKEEPER_CLIENT_PORT:-2181}"
+    restart: unless-stopped
+    networks:
+      - value-network
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: [ "--config=/etc/otel-collector-config.yaml" ]
+    volumes:
+      - ./value-engine/configs/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "${OTEL_GRPC_PORT:-4317}:4317" # OTLP gRPC receiver
+      - "${OTEL_HTTP_PORT:-4318}:4318" # OTLP HTTP receiver
+    environment:
+      - OTEL_RESOURCE_ATTRIBUTES=${OTEL_RESOURCE_ATTRIBUTES:-service.name=otel-collector,service.version=0.1.0}
+    depends_on:
+      - kafka
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:13133/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - value-network
+
+  # Celery Broker
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    environment:
+      - REDIS_HOST=${REDIS_HOST:-redis}
+    networks:
+      - value-network
+
+  celery-beat:
+    image: valmiinfra/value-engine-celery-beat:latest
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - CELERY_BEAT_LOGLEVEL=${CELERY_BEAT_LOGLEVEL:-info}
+      - CELERY_BEAT_ENABLED=${CELERY_BEAT_ENABLED:-false}
+      - INVOICE_SCHEDULE_TYPE=${INVOICE_SCHEDULE_TYPE:-custom}
+      - INVOICE_SCHEDULE_HOUR=${INVOICE_SCHEDULE_HOUR:-18}
+      - INVOICE_SCHEDULE_MINUTE=${INVOICE_SCHEDULE_MINUTE:-55}
+      - INVOICE_CRON_EXPRESSION=${INVOICE_CRON_EXPRESSION:-*/5 * * * *}
+      - CONTROL_PLANE_URL=${CONTROL_PLANE_URL:-http://value-control-plane-backend:8200}
+      - INVOICE_STORAGE_DIR=${INVOICE_STORAGE_DIR:-/data/invoices}
+    command: >
+      sh -c " if [ \"$$CELERY_BEAT_ENABLED\" = \"true\" ]; then
+        celery -A value_engine.orchestrator.celery_app beat --loglevel=$${CELERY_BEAT_LOGLEVEL:-info}
+      else
+        echo 'Celery Beat is disabled. Set CELERY_BEAT_ENABLED=true to enable.'
+        sleep infinity
+      fi "
+    depends_on:
+      redis:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - value-network
+
+  # Value Engine Services
+  server:
+    image: valmiinfra/value-engine-server:latest
+    ports:
+      - "${SERVER_PORT:-8000}:8000"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - CONTROL_PLANE_URL=${CONTROL_PLANE_URL:-http://value-control-plane-backend:8200}
+      - INVOICE_STORAGE_DIR=${INVOICE_STORAGE_DIR:-/data/invoices}
+      - CLICKHOUSE_HOST=${CLICKHOUSE_HOST:-clickhouse}
+      - CLICKHOUSE_HTTP_PORT=${CLICKHOUSE_HTTP_PORT:-8123}
+      - CLICKHOUSE_NATIVE_PORT=${CLICKHOUSE_NATIVE_PORT:-9000}
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB:-default}
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-}
+    depends_on:
+      - otel-collector
+      - clickhouse
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - value-network
+  orchestrator:
+    image: valmiinfra/value-engine-orchestrator:latest
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_DB=${REDIS_DB:-0}
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    depends_on:
+      redis:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import celery; print('Celery available')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - value-network
+
+  celery-worker:
+    image: valmiinfra/value-engine-celery-worker:latest
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_DB=${REDIS_DB:-0}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - CELERY_TASK_QUEUE=${CELERY_TASK_QUEUE:-pipes}
+      - CELERY_WORKER_CONCURRENCY=${CELERY_WORKER_CONCURRENCY:-4}
+      - CELERY_WORKER_LOGLEVEL=${CELERY_WORKER_LOGLEVEL:-info}
+      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      - CLICKHOUSE_HOST=${CLICKHOUSE_HOST:-clickhouse}
+      - CLICKHOUSE_HTTP_PORT=${CLICKHOUSE_HTTP_PORT:-8123}
+      - CLICKHOUSE_NATIVE_PORT=${CLICKHOUSE_NATIVE_PORT:-9000}
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB:-default}
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-}
+      - CONTROL_PLANE_URL=${CONTROL_PLANE_URL:-http://value-control-plane-backend:8200}
+    command: >
+      sh -c " celery -A value_engine.orchestrator.celery_app worker
+        --loglevel=$$CELERY_WORKER_LOGLEVEL
+        --concurrency=$$CELERY_WORKER_CONCURRENCY
+        -Q $$CELERY_TASK_QUEUE
+      "
+    depends_on:
+      redis:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import celery; print('Celery worker available')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      replicas: 1 # Scale Celery workers
+    networks:
+      - value-network
+
+  # Celery Invoice Worker (dedicated to invoices queue)
+  celery-invoice-worker:
+    image: valmiinfra/value-engine-celery-invoice-worker:latest
+    volumes:
+      - value-invoice-data:/data/invoices:rw
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_DB=${REDIS_DB:-0}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - CELERY_INVOICE_WORKER_CONCURRENCY=${CELERY_INVOICE_WORKER_CONCURRENCY:-2}
+      - CELERY_INVOICE_WORKER_LOGLEVEL=${CELERY_INVOICE_WORKER_LOGLEVEL:-info}
+      - CLICKHOUSE_HOST=${CLICKHOUSE_HOST:-clickhouse}
+      - CLICKHOUSE_HTTP_PORT=${CLICKHOUSE_HTTP_PORT:-8123}
+      - CLICKHOUSE_NATIVE_PORT=${CLICKHOUSE_NATIVE_PORT:-9000}
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB:-default}
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-}
+      - CONTROL_PLANE_URL=${CONTROL_PLANE_URL:-http://value-control-plane-backend:8200}
+      - INVOICE_STORAGE_DIR=${INVOICE_STORAGE_DIR:-/data/invoices}
+      - INVOICE_SCHEDULE_TYPE=${INVOICE_SCHEDULE_TYPE:-custom}
+      - INVOICE_SCHEDULE_HOUR=${INVOICE_SCHEDULE_HOUR:-18}
+      - INVOICE_SCHEDULE_MINUTE=${INVOICE_SCHEDULE_MINUTE:-55}
+      - INVOICE_CRON_EXPRESSION=${INVOICE_CRON_EXPRESSION:-*/5 * * * *}
+    command:
+      - "celery"
+      - "-A"
+      - "value_engine.orchestrator.celery_app"
+      - "worker"
+      - "--loglevel=info"
+      - "--concurrency=2"
+      - "-Q"
+      - "invoices"
+    depends_on:
+      redis:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+      clickhouse:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import celery; print('Celery invoice worker available')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      replicas: 1 # Scale invoice workers independently
+    networks:
+      - value-network
+
+  # Celery Flower (Monitoring UI)
+  celery-flower:
+    image: valmiinfra/value-engine-celery-flower:latest
+    ports:
+      - "${FLOWER_PORT:-5555}:5555"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+      - FLOWER_PORT=${FLOWER_PORT:-5555}
+      - FLOWER_BASIC_AUTH=${FLOWER_BASIC_AUTH:-}
+      - FLOWER_URL_PREFIX=${FLOWER_URL_PREFIX:-}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    command: >
+      sh -c " if [ \"$${FLOWER_BASIC_AUTH}\" ]; then
+        celery -A value_engine.orchestrator.celery_app flower
+          --port=$${FLOWER_PORT:-5555}
+          --broker=$${CELERY_BROKER_URL:-redis://redis:6379/0}
+          --basic_auth=$${FLOWER_BASIC_AUTH}
+          $${FLOWER_URL_PREFIX:+--url-prefix=$$FLOWER_URL_PREFIX}
+      else
+        celery -A value_engine.orchestrator.celery_app flower
+          --port=$${FLOWER_PORT:-5555}
+          --broker=$${CELERY_BROKER_URL:-redis://redis:6379/0}
+          $${FLOWER_URL_PREFIX:+--url-prefix=$$FLOWER_URL_PREFIX}
+      fi "
+    depends_on:
+      - otel-collector
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:$${FLOWER_PORT:-5555}/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - value-network
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    ports:
+      - "${CLICKHOUSE_HTTP_PORT:-8123}:8123" # HTTP interface
+      - "${CLICKHOUSE_NATIVE_PORT:-9000}:9000" # Native protocol
+      - "${CLICKHOUSE_INTERSERVER_PORT:-9009}:9009" # Inter-server communication
+    environment:
+      - CLICKHOUSE_DB=${CLICKHOUSE_DB:-default}
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-}
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_logs:/var/log/clickhouse-server
+      - ./value-engine/configs/clickhouse-config.xml:/etc/clickhouse-server/config.d/experimental-transactions.xml
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - zookeeper
+    networks:
+      - value-network

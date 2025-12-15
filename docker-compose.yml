@@ -1,0 +1,10 @@
+volumes:
+  postgres_data:
+  value-invoice-data:
+  redis_data:
+  clickhouse_data:
+  clickhouse_logs:
+
+
+networks:
+  value-network:

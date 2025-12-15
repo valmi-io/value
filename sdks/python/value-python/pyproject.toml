@@ -1,0 +1,105 @@
+[tool.poetry]
+name = "value-python"
+version = "0.1.4"
+description = "Python SDK to track AI agents with Value actions and auto-instrument LLM calls (Gemini, LangChain)"
+authors = ["srinivas <srinivas@valmi.io>"]
+readme = "README.md"
+license = "MIT"
+packages = [{ include = "value", from = "src" }]
+keywords = [
+    "opentelemetry",
+    "observability",
+    "tracing",
+    "ai",
+    "agents",
+    "genai",
+    "llm",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Monitoring",
+    "Typing :: Typed",
+]
+
+[tool.poetry.urls]
+Homepage = "https://github.com/valmi-io/value-python"
+Documentation = "https://github.com/valmi-io/value-python#readme"
+Repository = "https://github.com/valmi-io/value-python"
+Issues = "https://github.com/valmi-io/value-python/issues"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.14"
+
+# Core dependencies - required for basic installation
+opentelemetry-api = ">=1.20.0"
+opentelemetry-sdk = ">=1.20.0"
+opentelemetry-exporter-otlp-proto-grpc = ">=1.20.0"
+opentelemetry-instrumentation = ">=0.41b0"
+httpx = ">=0.24.0"
+
+# Optional dependencies for auto-instrumentation
+# GenAI (Google Generative AI)
+opentelemetry-instrumentation-google-generativeai = { version = ">=0.47.0", optional = true }
+google-genai = { version = ">=0.1.0", optional = true }
+
+# LangChain
+opentelemetry-instrumentation-langchain = { version = ">=0.47.0", optional = true }
+
+[tool.poetry.extras]
+# Google GenAI auto-instrumentation
+genai = ["opentelemetry-instrumentation-google-generativeai", "google-genai"]
+
+# LangChain auto-instrumentation
+langchain = ["opentelemetry-instrumentation-langchain"]
+
+# All auto-instrumentation libraries
+all = [
+    "opentelemetry-instrumentation-google-generativeai",
+    "google-genai",
+    "opentelemetry-instrumentation-langchain",
+]
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7.4.0"
+pytest-asyncio = ">=0.21.0"
+pytest-cov = ">=4.1.0"
+black = ">=23.0.0"
+ruff = ">=0.1.0"
+mypy = ">=1.0.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
+target-version = ['py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]

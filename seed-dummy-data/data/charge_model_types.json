@@ -1,0 +1,26 @@
+[
+  {
+    "name": "one-time",
+    "supported_model_types": [
+      "flat-fee",
+      "discount"
+    ]
+  },
+  {
+    "name": "recurring",
+    "supported_model_types": [
+      "flat-fee",
+      "discount",
+      "overage-pricing"
+    ]
+  },
+  {
+    "name": "usage",
+    "supported_model_types": [
+      "discount",
+      "per-unit",
+      "tiered",
+      "volume"
+    ]
+  }
+]

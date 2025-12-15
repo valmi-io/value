@@ -1,0 +1,49 @@
+services:
+  value-db:
+    image: postgres:15-alpine
+    env_file:
+      - ./value-control-plane-backend/.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - value-network
+
+  value-db-init:
+    image: postgres:15-alpine
+    depends_on:
+      value-db:
+        condition: service_healthy
+    env_file:
+      - ./value-control-plane-backend/.env
+    volumes:
+      - ./value-control-plane-backend/scripts/init_db.sh:/app/scripts/init_db.sh:ro
+    entrypoint: [ "/bin/sh", "-c", "/app/scripts/init_db.sh" ]
+    restart: "no"
+    networks:
+      - value-network
+
+  value-control-plane-backend:
+    image: valmiinfra/value-control-plane-backend:latest
+    volumes:
+      - value-invoice-data:/data/invoices:ro
+      - ./value-control-plane-backend/.env:/app/.env:ro
+    ports:
+      - "8200:8200"
+    environment:
+      - PORT=8200
+      - NUM_WORKERS=1
+      - INVOICE_STORAGE_DIR=/data/invoices
+    depends_on:
+      value-db:
+        condition: service_healthy
+    networks:
+      - value-network
+    command: >
+      bash -c "cd /app && alembic upgrade head && uvicorn value_control_plane_backend.main:app --host 0.0.0.0 --port 8200"

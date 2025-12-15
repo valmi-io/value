@@ -1,0 +1,5 @@
+.env
+.vscode
+.cursorrules
+.DS_Store
+seeded_agents.json

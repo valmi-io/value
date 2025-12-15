@@ -1,0 +1,146 @@
+name: Python SDK CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "sdks/python/value-python/**"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "sdks/python/value-python/**"
+
+defaults:
+  run:
+    working-directory: sdks/python/value-python
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv (Unix only)
+        id: cached-poetry-dependencies
+        if: runner.os != 'Windows'
+        uses: actions/cache@v4
+        with:
+          path: sdks/python/value-python/.venv
+          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('sdks/python/value-python/poetry.lock') }}
+
+      - name: Install dependencies (Unix)
+        if: runner.os != 'Windows' && steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: poetry install --no-interaction --no-root
+
+      - name: Install project (Unix)
+        if: runner.os != 'Windows'
+        run: poetry install --no-interaction
+
+      - name: Install project (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: poetry install --no-interaction
+
+      - name: Run linting (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          poetry run ruff check src/ tests/
+          poetry run black --check src/ tests/
+
+      - name: Run linting (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          poetry run ruff check src/ tests/
+          poetry run black --check src/ tests/
+
+      - name: Run tests (Unix)
+        if: runner.os != 'Windows'
+        run: poetry run pytest --cov=value --cov-report=term-missing
+
+      - name: Run tests (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: poetry run pytest --cov=value --cov-report=term-missing
+
+  test-extras:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        extra: [genai, langchain, all]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install with extra [${{ matrix.extra }}]
+        run: poetry install --no-interaction --extras ${{ matrix.extra }}
+
+      - name: Verify extra imports work
+        run: |
+          poetry run python -c "from value import auto_instrument, get_supported_libraries; print(get_supported_libraries())"
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [test]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+
+      - name: Build package
+        run: poetry build
+
+      - name: Check package
+        run: |
+          pip install twine
+          twine check dist/*
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: sdks/python/value-python/dist/

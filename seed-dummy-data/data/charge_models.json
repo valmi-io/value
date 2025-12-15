@@ -1,0 +1,137 @@
+[
+  {
+    "name": "Basic Platform Fee",
+    "description": "Fixed monthly platform access fee of $10",
+    "type": "flat-fee",
+    "pricing_strategy": {
+      "price": 10
+    }
+  },
+  {
+    "name": "Early Adopter Discount",
+    "description": "5% discount for early adopter customers",
+    "type": "discount",
+    "pricing_strategy": {
+      "discount_type": "percentage",
+      "discount_value": 5
+    }
+  },
+  {
+    "name": "Promotional Flat Discount",
+    "description": "$40 flat discount for promotional campaigns",
+    "type": "discount",
+    "pricing_strategy": {
+      "discount_type": "flat",
+      "discount_value": 40
+    }
+  },
+  {
+    "name": "Starter Plan Fee",
+    "description": "Low-cost starter plan at $4/month",
+    "type": "flat-fee",
+    "pricing_strategy": {
+      "price": 4
+    }
+  },
+  {
+    "name": "Loyalty Discount",
+    "description": "6% loyalty discount for long-term customers",
+    "type": "discount",
+    "pricing_strategy": {
+      "discount_type": "percentage",
+      "discount_value": 6
+    }
+  },
+  {
+    "name": "Enterprise Volume Discount",
+    "description": "$50 flat discount for enterprise contracts",
+    "type": "discount",
+    "pricing_strategy": {
+      "discount_type": "flat",
+      "discount_value": 50
+    }
+  },
+  {
+    "name": "Action Overage Pricing",
+    "description": "$2 per action after 77 included units",
+    "type": "overage-pricing",
+    "pricing_strategy": {
+      "price": 2,
+      "included_units": 77,
+      "unit_of_measure": "@action"
+    }
+  },
+  {
+    "name": "Referral Discount",
+    "description": "3% discount for referred customers",
+    "type": "discount",
+    "pricing_strategy": {
+      "discount_type": "percentage",
+      "discount_value": 3
+    }
+  },
+  {
+    "name": "Per Action Pricing",
+    "description": "$2.20 per action performed",
+    "type": "per-unit",
+    "pricing_strategy": {
+      "price": 2.2,
+      "unit_of_measure": "@action"
+    }
+  },
+  {
+    "name": "Outcome Tiered Pricing - Free Tier",
+    "description": "Tiered pricing for outcomes with free tier up to 10 units",
+    "type": "tiered",
+    "pricing_strategy": {
+      "tiers": [
+        {
+          "price": 0,
+          "start": 1,
+          "counter": 10
+        },
+        {
+          "price": 0,
+          "start": 11,
+          "counter": 110
+        }
+      ],
+      "unit_of_measure": "@outcome"
+    }
+  },
+  {
+    "name": "Action Volume Pricing",
+    "description": "$3 per action with volume-based pricing",
+    "type": "volume",
+    "pricing_strategy": {
+      "tiers": [
+        {
+          "price": 3,
+          "start": 1,
+          "counter": 15
+        }
+      ],
+      "unit_of_measure": "@action"
+    }
+  },
+  {
+    "name": "Outcome Tiered Pricing - Standard",
+    "description": "Tiered pricing: $5 for first 10 outcomes, $3 for additional",
+    "type": "tiered",
+    "pricing_strategy": {
+      "tiers": [
+        {
+          "price": 5,
+          "start": 1,
+          "counter": 10
+        },
+        {
+          "price": 3,
+          "start": 11,
+          "counter": 110
+        }
+      ],
+      "unit_of_measure": "@outcome"
+    }
+  }
+]

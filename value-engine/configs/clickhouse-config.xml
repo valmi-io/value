@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<clickhouse>
+    <allow_experimental_transactions>1</allow_experimental_transactions>
+
+        <!-- ZooKeeper configuration for transactions -->
+    <zookeeper>
+        <node>
+            <host>zookeeper</host>
+            <port>2181</port>
+        </node>
+    </zookeeper>
+
+</clickhouse>
+
