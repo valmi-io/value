@@ -36,7 +36,7 @@ Value Platform handles metering, pricing, billing, and revenue tracking for AI a
 
 ## Start Tracking Your AI Agents
 
-Choose your deployment option, and start metering and billing in minutes:
+Choose your deployment option, and start metering in minutes:
 
 ---
 
