@@ -10,8 +10,16 @@
      <a href="https://github.com/valmi-io/value"><img src="https://img.shields.io/github/stars/valmi-io/value?style=for-the-badge" alt="GitHub stars"></a>
    <a href="https://hub.docker.com/repositories/valmiinfra"><img src="https://img.shields.io/badge/🐳_Docker-0ea5e9?style=for-the-badge" alt="Docker Hub"></a>
   
-  ⭐ *Consider giving us a star! Your support helps us add new, exciting features.*
+  ⭐ *Consider giving us a Github star! Your support helps us add new, exciting features.*
 </p>
+
+   <div align="center">
+
+### We are Live Now!
+   <p align="center">
+<a href="https://www.producthunt.com/products/valmi-io?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_source=badge-valmi-value" target="_blank" rel="noopener noreferrer"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1050378&amp;theme=light&amp;t=1765870304893" alt="Valmi Value - Outcome Billing and Payments Infrastructure for AI Agents | Product Hunt" style="width:250px;height:54px" width="250" height="54"></a>
+   </p>
+</div>
 
 # Value Platform
 
@@ -28,7 +36,7 @@ Value Platform handles metering, pricing, billing, and revenue tracking for AI a
 
 ## Start Tracking Your AI Agents
 
-Choose your deployment option and start metering in minutes:
+Choose your deployment option, and start metering and billing in minutes:
 
 ---
 
