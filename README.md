@@ -29,10 +29,10 @@ Outcome-based billing and payments infrastructure for AI agents. Meter usage, co
 
 Value Platform handles metering, pricing, billing, and revenue tracking for AI agents:
 
-- **AI-Native Metering** — Track tokens, LLM calls, API usage, and outcomes with minimal code
-- **Flexible Pricing** — Fixed-Fee, Usage-based, tiered, per-action, per-outcome, or any combination
-- **Cost Attribution** — Automatically allocate costs across LLM providers, APIs, and compute
-- **Revenue Insights** — Real-time profitability tracking per agent and per customer
+- **AI-Native Metering** - Track tokens, LLM calls, API usage, and outcomes with minimal code
+- **Flexible Pricing** - Fixed-Fee, Usage-based, tiered, per-action, per-outcome, or any combination
+- **Cost Attribution** - Automatically allocate costs across LLM providers, APIs, and compute
+- **Revenue Insights** - Real-time profitability tracking per agent and per customer
 
 ## Start Tracking Your AI Agents
 
@@ -42,7 +42,7 @@ Choose your deployment option, and start metering in minutes:
 
 ### ☁️ Option 1: Use Value Cloud
 
-The fastest way to get started — no infrastructure to manage.
+The fastest way to get started - no infrastructure to manage.
 
 **Step 1:** Sign up at 👉 **[value.valmi.io](https://www.value.valmi.io/)**
 
