@@ -15,10 +15,7 @@
 
    <div align="center">
 
-### We are Live Now!
-   <p align="center">
-<a href="https://www.producthunt.com/products/valmi-io?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_source=badge-valmi-value" target="_blank" rel="noopener noreferrer"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1050378&amp;theme=light&amp;t=1765870304893" alt="Valmi Value - Outcome Billing and Payments Infrastructure for AI Agents | Product Hunt" style="width:250px;height:54px" width="250" height="54"></a>
-   </p>
+
 </div>
 
 # Value Platform
